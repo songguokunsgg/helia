@@ -30,10 +30,31 @@ macro u8(arg)
 end
 
 macro say(content)
-    return :(println($content))
+    if typeof(eval(content)) <: Vector
+        str = ""
+        for x in eval(content)
+            str *= string(x)*" | "
+        end
+        str = str[1:end-3]
+        println(str)
+
+    elseif typeof(eval(content)) <: Matrix
+        for line in 1:size(eval(content),1)
+            str = ""
+            for x in eval(content)[line,:]
+                str *= string(x)*" | "
+            end
+            str = str[1:end-3]
+            println(str)
+        end
+
+    else
+        println(eval(content))
+    end
 end
 
 macro cyber(arg)
+
     str = deletePar(string(arg))[2:end]
     nums = parse.(Int, split(str, "|"))
     chars = Char.(nums)
@@ -55,25 +76,14 @@ deletePar(str::String) = str[[x for x in 1:length(str) if str[x] ∉ ['(', ')', 
 # exp表示下标，必须为Int
 function evaluate(arr, exp, value)
     if !(typeof(arr) <: Array) ||
-       typeof(exp) != Expr ||
        !(typeof(value) <: Number)
         error("输入错误")
-    else
+    elseif typeof(exp) == Expr
         str = deletePar(string(exp))
         index = parse.(Int, split(str, "|"))
         arr[index] .= value
         return arr
+    elseif typeof(exp) == Int
+        arr[exp] = value
     end
-end
-
-# 测试代码
-begin
-    a = @u8[10]
-    @say a
-
-    evaluate(a, :(1 | 4 | 7 | 10), 5)
-    @say a
-
-    @cyber :(72 | 101 | 108 | 108 | 111)
-    @say @cyber :(72 | 101 | 108 | 108 | 111)
 end
